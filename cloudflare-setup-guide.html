@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quiltly Cloudflare Setup Guide</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17211d;
+      --muted: #65736d;
+      --paper: #fbfaf6;
+      --panel: #ffffff;
+      --line: #d9dfd7;
+      --green: #0b7a4b;
+      --green-soft: #e6f4ec;
+      --blue: #1f5f8b;
+      --blue-soft: #e7f0f8;
+      --rose: #a43d57;
+      --rose-soft: #f7e6eb;
+      --gold: #a76a10;
+      --gold-soft: #f8edd8;
+      --charcoal: #22312b;
+      --shadow: 0 24px 70px rgba(34, 49, 43, .13);
+      font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(11, 122, 75, .08), transparent 32%),
+        linear-gradient(315deg, rgba(164, 61, 87, .09), transparent 35%),
+        var(--paper);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .42;
+      background-image:
+        linear-gradient(45deg, rgba(23, 33, 29, .055) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(23, 33, 29, .055) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(23, 33, 29, .055) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(23, 33, 29, .055) 75%);
+      background-size: 34px 34px;
+      background-position: 0 0, 0 17px, 17px -17px, -17px 0;
+      mask-image: linear-gradient(to bottom, black, transparent 82%);
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 64px;
+    }
+
+    .hero {
+      min-height: 72vh;
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(280px, .92fr);
+      gap: 28px;
+      align-items: stretch;
+      padding-top: 16px;
+    }
+
+    .hero-copy {
+      align-self: center;
+      padding: 38px 0;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      color: var(--green);
+      font: 700 13px/1 ui-sans-serif, system-ui, sans-serif;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 30px;
+      height: 2px;
+      background: var(--green);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(46px, 7vw, 92px);
+      line-height: .9;
+      max-width: 760px;
+      letter-spacing: 0;
+    }
+
+    .lede {
+      margin: 24px 0 0;
+      max-width: 650px;
+      color: var(--muted);
+      font: 19px/1.65 ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 30px;
+      font: 700 14px/1 ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 46px;
+      padding: 0 18px;
+      border-radius: 6px;
+      text-decoration: none;
+      border: 1px solid var(--charcoal);
+      background: var(--charcoal);
+      color: #fff;
+    }
+
+    .button.secondary {
+      background: transparent;
+      color: var(--charcoal);
+    }
+
+    .quilt-card {
+      min-height: 520px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 18px;
+      transform: rotate(1.2deg);
+    }
+
+    .patchwork {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      gap: 8px;
+      min-height: 0;
+    }
+
+    .patch {
+      border-radius: 5px;
+      border: 1px solid rgba(23, 33, 29, .14);
+      background: var(--green-soft);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .patch::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(90deg, rgba(255,255,255,.35), transparent 40%, rgba(23,33,29,.05));
+    }
+
+    .patch.a { grid-column: span 2; background: var(--green-soft); }
+    .patch.b { grid-column: span 2; background: var(--rose-soft); }
+    .patch.c { grid-column: span 2; background: var(--blue-soft); }
+    .patch.d { grid-column: span 3; background: var(--gold-soft); }
+    .patch.e { grid-column: span 1; background: #eef0e7; }
+
+    .stack {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      font: 700 12px/1.2 ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+      background: #fbfcfb;
+    }
+
+    .pill strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    section {
+      margin-top: 34px;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 48px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .section-title p {
+      margin: 0;
+      max-width: 440px;
+      color: var(--muted);
+      font: 15px/1.55 ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .node, .step, .check, .note {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .82);
+      box-shadow: 0 12px 35px rgba(34, 49, 43, .08);
+    }
+
+    .node {
+      padding: 18px;
+      min-height: 156px;
+    }
+
+    .node span {
+      display: inline-grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      margin-bottom: 16px;
+      border-radius: 50%;
+      color: #fff;
+      background: var(--green);
+      font: 800 14px/1 ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .node:nth-child(2) span { background: var(--blue); }
+    .node:nth-child(3) span { background: var(--rose); }
+    .node:nth-child(4) span { background: var(--gold); }
+
+    h3 {
+      margin: 0 0 8px;
+      font: 800 17px/1.2 ui-sans-serif, system-ui, sans-serif;
+    }
+
+    p, li {
+      font: 15px/1.6 ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .node p, .step p, .check p, .note p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .step {
+      padding: 20px;
+    }
+
+    .step-header {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      font: 800 12px/1 ui-sans-serif, system-ui, sans-serif;
+      color: var(--charcoal);
+      background: var(--gold-soft);
+      border: 1px solid rgba(167, 106, 16, .22);
+    }
+
+    pre {
+      margin: 14px 0 0;
+      padding: 14px;
+      overflow-x: auto;
+      border-radius: 7px;
+      background: #15221d;
+      color: #f4fff8;
+      font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .checks {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .check {
+      padding: 18px;
+    }
+
+    .check strong {
+      display: block;
+      margin-bottom: 8px;
+      font: 800 15px/1.2 ui-sans-serif, system-ui, sans-serif;
+    }
+
+    ul {
+      padding-left: 18px;
+      margin: 12px 0 0;
+      color: var(--muted);
+    }
+
+    .note {
+      padding: 18px;
+      background: linear-gradient(135deg, var(--blue-soft), #fff);
+    }
+
+    .small {
+      color: var(--muted);
+      font: 13px/1.55 ui-sans-serif, system-ui, sans-serif;
+    }
+
+    @media (max-width: 880px) {
+      .hero, .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        min-height: 0;
+      }
+
+      .quilt-card {
+        min-height: 420px;
+        transform: none;
+      }
+
+      .flow, .checks {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .section-title {
+        display: block;
+      }
+
+      .section-title p {
+        margin-top: 10px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page {
+        width: min(100% - 22px, 1180px);
+        padding-top: 18px;
+      }
+
+      .flow, .checks, .stack {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: clamp(42px, 15vw, 62px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">Cloudflare setup map</div>
+        <h1>Ship Quiltly on Cloudflare Workers</h1>
+        <p class="lede">
+          This project is a Nuxt 4 + NuxtHub app. The deployment path is Cloudflare Workers with NuxtHub-managed database, blob storage, cache, auth tables, and the existing Cloudflare Email binding in <code>wrangler.jsonc</code>.
+        </p>
+        <div class="hero-actions">
+          <a class="button" href="#checklist">Start checklist</a>
+          <a class="button secondary" href="#commands">Copy commands</a>
+        </div>
+      </div>
+
+      <aside class="quilt-card" aria-label="Project deployment map">
+        <div class="patchwork">
+          <div class="patch a"></div><div class="patch b"></div><div class="patch c"></div>
+          <div class="patch d"></div><div class="patch e"></div><div class="patch a"></div><div class="patch e"></div>
+          <div class="patch b"></div><div class="patch c"></div><div class="patch a"></div>
+          <div class="patch e"></div><div class="patch d"></div><div class="patch b"></div><div class="patch e"></div>
+          <div class="patch c"></div><div class="patch a"></div><div class="patch d"></div>
+          <div class="patch b"></div><div class="patch e"></div><div class="patch c"></div><div class="patch a"></div>
+          <div class="patch d"></div><div class="patch b"></div><div class="patch e"></div>
+        </div>
+        <div class="stack">
+          <div class="pill"><strong>NuxtHub</strong>D1, R2, cache</div>
+          <div class="pill"><strong>Workers</strong>SSR and APIs</div>
+          <div class="pill"><strong>Email</strong>Verification and reset</div>
+        </div>
+      </aside>
+    </div>
+
+    <section id="checklist">
+      <div class="section-title">
+        <h2>Deployment Flow</h2>
+        <p>Move left to right. Do not start with Pages-only settings, because this app has server routes, auth, blob uploads, and database migrations.</p>
+      </div>
+      <div class="flow">
+        <div class="node">
+          <span>1</span>
+          <h3>Local build is clean</h3>
+          <p>Install with pnpm, generate Nuxt types, lint, typecheck, build, and confirm Nitro reports the cloudflare-module preset.</p>
+        </div>
+        <div class="node">
+          <span>2</span>
+          <h3>Cloudflare account is ready</h3>
+          <p>Wrangler must be logged in to the account that will own the Worker and bindings.</p>
+        </div>
+        <div class="node">
+          <span>3</span>
+          <h3>Bindings exist</h3>
+          <p>NuxtHub covers db, blob, and cache. The committed Wrangler file adds Email Sending and observability.</p>
+        </div>
+        <div class="node">
+          <span>4</span>
+          <h3>Deploy and test</h3>
+          <p>Deploy with Wrangler, create a test account, upload an image, save a bookmark, and check logs.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="commands">
+      <div class="section-title">
+        <h2>Commands</h2>
+        <p>Run these from the repository root. This project already declares <code>pnpm@11.8.0</code> in <code>package.json</code>.</p>
+      </div>
+      <div class="grid">
+        <article class="step">
+          <div class="step-header">
+            <span class="tag">Local</span>
+            <h3>Prepare and verify</h3>
+          </div>
+          <p>Use this before touching Cloudflare so deployment errors are not mixed with local errors.</p>
+          <pre><code>pnpm install
+pnpm run lint
+pnpm run typecheck
+pnpm run build</code></pre>
+        </article>
+
+        <article class="step">
+          <div class="step-header">
+            <span class="tag">Auth</span>
+            <h3>Log in to Cloudflare</h3>
+          </div>
+          <p>Wrangler must show the right account before creating resources or deploying.</p>
+          <pre><code>pnpm exec wrangler login
+pnpm exec wrangler whoami</code></pre>
+        </article>
+
+        <article class="step">
+          <div class="step-header">
+            <span class="tag">Secrets</span>
+            <h3>Add production secrets</h3>
+          </div>
+          <p>Keep secrets in Cloudflare, not in git. Use the dashboard or Wrangler secret commands.</p>
+          <pre><code>pnpm exec wrangler secret put BETTER_AUTH_SECRET
+pnpm exec wrangler secret put NUXT_CF_ACCOUNT_ID
+pnpm exec wrangler secret put NUXT_CF_EMAIL_API_TOKEN</code></pre>
+        </article>
+
+        <article class="step">
+          <div class="step-header">
+            <span class="tag">Deploy</span>
+            <h3>Publish the Worker</h3>
+          </div>
+          <p>The app now sets <code>nitro.preset: 'cloudflare-module'</code>. Nitro generates the deployable Wrangler config in <code>.output</code>.</p>
+          <pre><code>pnpm run build
+pnpm exec wrangler --cwd .output deploy</code></pre>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>Cloudflare Console</h2>
+        <p>Use this as the dashboard checklist after the first deploy has created or linked the Worker.</p>
+      </div>
+      <div class="checks">
+        <div class="check">
+          <strong>Worker</strong>
+          <p>Workers & Pages -> quiltly -> Settings. Confirm compatibility flag <code>nodejs_compat</code> and observability logs are enabled.</p>
+        </div>
+        <div class="check">
+          <strong>Data</strong>
+          <p>Confirm NuxtHub resources are present for SQLite/D1, blob/R2, and cache/KV. Migrations should create auth, projects, supplies, bookmarks, and project supplies tables.</p>
+        </div>
+        <div class="check">
+          <strong>Email</strong>
+          <p>Enable Cloudflare Email Sending or route-compatible sending for <code>noreply@quiltly.app</code>. Auth emails use the REST credentials listed in the secrets step and now fail loudly if production mail cannot be sent.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>Post-Deploy Smoke Test</h2>
+        <p>These checks exercise the parts most likely to fail from missing bindings, migrations, or secrets.</p>
+      </div>
+      <div class="grid">
+        <article class="step">
+          <h3>In the app</h3>
+          <ul>
+            <li>Create a new user and verify the email flow.</li>
+            <li>Add one supply and one project.</li>
+            <li>Link the supply to the project, then mark the project completed.</li>
+            <li>Upload an image and confirm it renders from <code>/api/files/...</code>.</li>
+            <li>Save a bookmark and confirm metadata is fetched.</li>
+          </ul>
+        </article>
+        <article class="step">
+          <h3>From Wrangler</h3>
+          <p>Tail logs while running the app smoke test. Email, D1, and blob failures should show up here.</p>
+          <pre><code>pnpm exec wrangler tail quiltly</code></pre>
+          <p class="small">If this command differs for your Wrangler version, use the dashboard log stream for the Worker.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>Required Config Check</h2>
+        <p>The current app must build for Cloudflare before Wrangler deploys it. This is the one setup step to verify carefully.</p>
+      </div>
+      <div class="note">
+        <h3>Nitro target</h3>
+        <p>
+          <code>nuxt.config.ts</code> now sets <code>nitro.preset</code> to <code>cloudflare-module</code>. A successful Cloudflare-targeted build should report <code>Nitro preset: cloudflare-module</code> and should not include local platform binaries such as Darwin-only image tooling.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <div class="note">
+        <h3>Project-specific notes</h3>
+        <p>
+          The current <code>wrangler.jsonc</code> commits the Worker name, <code>nodejs_compat</code>, Email binding, and observability. Keep NuxtHub storage configuration in <code>nuxt.config.ts</code>, and keep <code>BETTER_AUTH_SECRET</code>, <code>NUXT_CF_ACCOUNT_ID</code>, and <code>NUXT_CF_EMAIL_API_TOKEN</code> configured as Cloudflare secrets.
+        </p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,124 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  --font-sans: "Avenir Next", "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", "Avenir Next", Georgia, ui-serif, serif;
+
+  --color-calico-50: #fff5f0;
+  --color-calico-100: #ffe5dc;
+  --color-calico-200: #ffc9bb;
+  --color-calico-300: #ffa594;
+  --color-calico-400: #fb7b70;
+  --color-calico-500: #ef5f5c;
+  --color-calico-600: #d94249;
+  --color-calico-700: #b9323e;
+  --color-calico-800: #982b39;
+  --color-calico-900: #7d2835;
+  --color-calico-950: #46121a;
+
+  --color-petal-50: #fff7fb;
+  --color-petal-100: #ffe8f1;
+  --color-petal-200: #ffd0e0;
+  --color-petal-300: #ffadc8;
+  --color-petal-400: #fb7faa;
+  --color-petal-500: #ed5d91;
+  --color-petal-600: #d73e76;
+  --color-petal-700: #b92d61;
+  --color-petal-800: #982751;
+  --color-petal-900: #7f2548;
+  --color-petal-950: #4d0f26;
+
+  --color-meadow-50: #f5faee;
+  --color-meadow-100: #e7f2d8;
+  --color-meadow-200: #d0e6b7;
+  --color-meadow-300: #acd18b;
+  --color-meadow-400: #82b562;
+  --color-meadow-500: #629a45;
+  --color-meadow-600: #4b7a34;
+  --color-meadow-700: #3d612d;
+  --color-meadow-800: #354e2a;
+  --color-meadow-900: #2d4326;
+  --color-meadow-950: #142312;
+
+  --color-sky-50: #f1f8f8;
+  --color-sky-100: #dceeee;
+  --color-sky-200: #bddedf;
+  --color-sky-300: #92c7ca;
+  --color-sky-400: #66a9af;
+  --color-sky-500: #4d8e96;
+  --color-sky-600: #3f747d;
+  --color-sky-700: #385f67;
+  --color-sky-800: #334f56;
+  --color-sky-900: #2e454b;
+  --color-sky-950: #182c31;
+
+  --color-marigold-50: #fff9eb;
+  --color-marigold-100: #ffedc2;
+  --color-marigold-200: #ffdb86;
+  --color-marigold-300: #ffc24a;
+  --color-marigold-400: #f7a51d;
+  --color-marigold-500: #df8611;
+  --color-marigold-600: #ba650f;
+  --color-marigold-700: #954b13;
+  --color-marigold-800: #793d17;
+  --color-marigold-900: #663416;
+  --color-marigold-950: #3a1909;
+
+  --color-rosewood-50: #fff1f2;
+  --color-rosewood-100: #ffe0e3;
+  --color-rosewood-200: #ffc7ce;
+  --color-rosewood-300: #ffa0ae;
+  --color-rosewood-400: #fa6f86;
+  --color-rosewood-500: #ec4968;
+  --color-rosewood-600: #d52d53;
+  --color-rosewood-700: #b31f43;
+  --color-rosewood-800: #951d3d;
+  --color-rosewood-900: #801d39;
+  --color-rosewood-950: #470a1a;
+
+  --color-muslin-50: #fffaf0;
+  --color-muslin-100: #f7ecd7;
+  --color-muslin-200: #ecdbc0;
+  --color-muslin-300: #dcc49e;
+  --color-muslin-400: #c4a97c;
+  --color-muslin-500: #a98e62;
+  --color-muslin-600: #88714c;
+  --color-muslin-700: #69573e;
+  --color-muslin-800: #4f4435;
+  --color-muslin-900: #373128;
+  --color-muslin-950: #201b16;
+}
+
+:root {
+  --ui-radius: 0.5rem;
+  --ui-container: 74rem;
+  --ui-bg: #fffaf0;
+  --ui-bg-muted: #f8efe1;
+  --ui-bg-elevated: #fff7eb;
+  --ui-bg-accented: #f0dec3;
+  --ui-border: #ead6ba;
+  --ui-border-muted: #f2e4ce;
+  --ui-border-accented: #ddbf96;
+}
+
+.dark {
+  --ui-bg: #201b16;
+  --ui-bg-muted: #2b251f;
+  --ui-bg-elevated: #373128;
+  --ui-bg-accented: #4f4435;
+  --ui-border: #69573e;
+  --ui-border-muted: #4f4435;
+  --ui-border-accented: #88714c;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--ui-bg);
+  background-image:
+    linear-gradient(90deg, rgb(105 87 62 / 0.03) 1px, transparent 1px),
+    linear-gradient(0deg, rgb(105 87 62 / 0.03) 1px, transparent 1px);
+  background-size: 28px 28px;
+  color: var(--ui-text);
+  font-feature-settings: "liga" 1, "calt" 1;
+}
