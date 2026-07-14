@@ -26,15 +26,18 @@ const userMenu = computed(() => [
 </script>
 
 <template>
-  <div class="min-h-screen bg-default text-default">
-    <UHeader>
+  <div class="min-h-screen bg-default text-default paper-noise">
+    <UHeader
+      :toggle="false"
+      class="mx-3 mt-3 rounded-[3px]"
+    >
       <template #left>
         <NuxtLink
           to="/dashboard"
-          class="flex items-center gap-2.5 font-semibold"
+          class="flex items-center gap-3"
         >
           <LandingPatch size="sm" />
-          <span>Quiltly</span>
+          <span class="font-display text-xl font-medium tracking-[-0.04em]">Quiltly</span>
         </NuxtLink>
       </template>
 
@@ -45,7 +48,6 @@ const userMenu = computed(() => [
       />
 
       <template #right>
-        <UColorModeButton />
         <UDropdownMenu
           :items="userMenu"
           :content="{ align: 'end' }"
@@ -60,13 +62,13 @@ const userMenu = computed(() => [
       </template>
     </UHeader>
 
-    <UMain>
-      <div class="pb-20 md:pb-0">
+    <UMain class="pt-4">
+      <div class="app-content pb-24 md:pb-10">
         <slot />
       </div>
     </UMain>
 
-    <nav class="md:hidden fixed bottom-0 inset-x-0 z-50 bg-default/82 backdrop-blur-md border-t border-muted pb-[env(safe-area-inset-bottom)]">
+    <nav class="md:hidden fixed bottom-3 inset-x-3 z-50 bg-elevated/92 backdrop-blur-xl rounded-[3px] pb-[env(safe-area-inset-bottom)] shadow-[0_12px_40px_rgb(68_60_56_/_0.12)]">
       <div class="grid grid-cols-4">
         <NuxtLink
           v-for="item in nav"

@@ -1,7 +1,20 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "quiltly",
+  "compatibility_date": "2025-01-15",
   "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_id": "27106bdf-32a2-4f77-86e9-ee23dc313a81"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "BLOB",
+      "bucket_name": "quiltly-blob"
+    }
+  ],
   "send_email": [
     { "name": "EMAIL", "remote": true }
   ],

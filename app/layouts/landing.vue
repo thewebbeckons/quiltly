@@ -1,30 +1,39 @@
 <script setup lang="ts">
 const { user } = useUserSession()
-
-useHead({
-  link: [
-    { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-    { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-    { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap' }
-  ]
-})
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-default text-default">
-    <UHeader>
+  <div class="min-h-screen flex flex-col bg-default text-default paper-noise">
+    <UHeader
+      :toggle="false"
+      class="mx-3 mt-3 rounded-[3px]"
+    >
       <template #left>
         <NuxtLink
           to="/"
-          class="flex items-center gap-2.5 font-semibold"
+          class="flex items-center gap-3"
         >
           <LandingPatch size="sm" />
-          <span>Quiltly</span>
+          <span class="font-display text-xl font-medium tracking-[-0.04em]">Quiltly</span>
         </NuxtLink>
       </template>
 
+      <nav class="hidden md:flex items-center gap-8 font-mono text-xs text-muted">
+        <NuxtLink
+          to="/#practice"
+          class="transition-colors hover:text-highlighted"
+        >
+          Practice
+        </NuxtLink>
+        <NuxtLink
+          to="/#process"
+          class="transition-colors hover:text-highlighted"
+        >
+          Process
+        </NuxtLink>
+      </nav>
+
       <template #right>
-        <UColorModeButton />
         <UButton
           v-if="user"
           to="/dashboard"
@@ -37,6 +46,7 @@ useHead({
             label="Sign in"
             color="neutral"
             variant="ghost"
+            class="hidden sm:inline-flex"
           />
           <UButton
             to="/login?mode=register"
@@ -51,14 +61,19 @@ useHead({
       <slot />
     </UMain>
 
-    <footer class="border-t border-muted py-10 mt-12">
-      <UContainer class="flex flex-col items-center gap-3 text-center">
-        <div class="flex items-center gap-2.5 font-semibold">
-          <LandingPatch size="sm" />
-          <span>Quiltly</span>
+    <footer class="section-rule py-14 mt-0 bg-elevated/45">
+      <UContainer class="grid gap-10 md:grid-cols-[1fr_auto] md:items-end">
+        <div class="max-w-lg">
+          <div class="flex items-center gap-3 mb-4">
+            <LandingPatch size="sm" />
+            <span class="font-display text-2xl font-medium tracking-[-0.04em]">Quiltly</span>
+          </div>
+          <p class="text-lg text-muted leading-relaxed">
+            Track your quilting supplies, projects, and inspiration — all in one place.
+          </p>
         </div>
-        <p class="text-sm text-muted">
-          Track your quilting supplies, projects, and inspiration — all in one place.
+        <p class="editorial-label text-muted">
+          Made for thoughtful making
         </p>
       </UContainer>
     </footer>
