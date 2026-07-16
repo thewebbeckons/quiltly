@@ -15,6 +15,13 @@
       "when": 1751334760000,
       "tag": "0001_swift_helix",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784168251489,
+      "tag": "0002_yellow_mikhail_rasputin",
+      "breakpoints": true
     }
   ]
 }

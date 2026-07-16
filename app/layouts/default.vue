@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { user, signOut } = useUserSession()
 const route = useRoute()
+const onboardingOpen = ref(false)
 
 const nav = [
   { label: 'Dashboard', to: '/dashboard', icon: 'i-lucide-layout-dashboard' },
@@ -20,6 +21,8 @@ async function onSignOut() {
 const userMenu = computed(() => [
   { type: 'label' as const, label: user.value?.name || 'Account' },
   { type: 'label' as const, label: user.value?.email || '' },
+  { type: 'separator' as const },
+  { label: 'View welcome tour', icon: 'i-lucide-sparkles', onSelect: () => onboardingOpen.value = true },
   { type: 'separator' as const },
   { label: 'Sign out', icon: 'i-lucide-log-out', color: 'error' as const, onSelect: onSignOut }
 ])
@@ -57,6 +60,7 @@ const userMenu = computed(() => [
             variant="ghost"
             icon="i-lucide-user"
             trailing-icon="i-lucide-chevron-down"
+            aria-label="Open account menu"
           />
         </UDropdownMenu>
       </template>
@@ -85,5 +89,7 @@ const userMenu = computed(() => [
         </NuxtLink>
       </div>
     </nav>
+
+    <OnboardingTour v-model:open="onboardingOpen" />
   </div>
 </template>

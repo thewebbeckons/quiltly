@@ -5,6 +5,7 @@ export default defineServerAuth(() => ({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
+    requireEmailVerification: true,
     sendResetPassword: async ({ user, url }, request) => {
       await sendEmail({
         to: user.email,
@@ -16,6 +17,7 @@ export default defineServerAuth(() => ({
   },
   emailVerification: {
     sendOnSignUp: true,
+    sendOnSignIn: true,
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }, request) => {
       await sendEmail({
