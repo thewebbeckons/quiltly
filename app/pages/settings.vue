@@ -6,10 +6,8 @@ const { user, updateUser, fetchSession } = useUserSession()
 const { show: showOnboardingTour } = useOnboardingTour()
 const changeEmail = useAuthClientAction(client => client.changeEmail)
 const changePassword = useAuthClientAction(client => client.changePassword)
-const requestPasswordReset = useAuthClientAction(client => client.requestPasswordReset)
 
 const nameSaving = ref(false)
-const resetSending = ref(false)
 const showPasswords = ref(false)
 const nameState = reactive({ name: user.value?.name || '' })
 const emailState = reactive({ email: user.value?.email || '' })
@@ -59,7 +57,7 @@ watch(user, (current) => {
 
 function friendlyError(message?: string, code?: string) {
   if (code === 'INVALID_PASSWORD') return 'Your current password is not correct.'
-  if (code === 'CREDENTIAL_ACCOUNT_NOT_FOUND') return 'This account does not have a password yet. Send yourself a reset link to create one.'
+  if (code === 'CREDENTIAL_ACCOUNT_NOT_FOUND') return 'This account does not have a password to update.'
   if (code === 'USER_ALREADY_EXISTS') return 'That email is already in use.'
   if (code === 'SESSION_EXPIRED') return 'Please sign in again before changing this setting.'
   return message || 'We could not complete that request. Please try again.'
@@ -143,34 +141,6 @@ async function savePassword() {
     description: 'Other sessions have been signed out.',
     color: 'success',
     icon: 'i-lucide-shield-check'
-  })
-}
-
-async function sendResetLink() {
-  if (!user.value?.email) return
-
-  resetSending.value = true
-  await requestPasswordReset.execute({
-    email: user.value.email,
-    redirectTo: '/reset-password'
-  })
-  resetSending.value = false
-
-  if (requestPasswordReset.error.value) {
-    toast.add({
-      title: 'Reset email could not be sent',
-      description: friendlyError(requestPasswordReset.error.value.message, requestPasswordReset.error.value.code),
-      color: 'error',
-      icon: 'i-lucide-circle-alert'
-    })
-    return
-  }
-
-  toast.add({
-    title: 'Reset email sent',
-    description: `Check ${user.value.email}.`,
-    color: 'info',
-    icon: 'i-lucide-send'
   })
 }
 </script>
@@ -307,22 +277,22 @@ async function sendResetLink() {
             class="space-y-4"
             @submit="savePassword"
           >
-            <div class="grid gap-4 sm:grid-cols-2">
-              <UFormField
-                name="currentPassword"
-                label="Current password"
-                required
-              >
-                <UInput
-                  v-model="passwordState.currentPassword"
-                  :type="showPasswords ? 'text' : 'password'"
-                  autocomplete="current-password"
-                  icon="i-lucide-key-round"
-                  class="w-full"
-                  :disabled="changePassword.status.value === 'pending'"
-                />
-              </UFormField>
+            <UFormField
+              name="currentPassword"
+              label="Current password"
+              required
+            >
+              <UInput
+                v-model="passwordState.currentPassword"
+                :type="showPasswords ? 'text' : 'password'"
+                autocomplete="current-password"
+                icon="i-lucide-key-round"
+                class="w-full"
+                :disabled="changePassword.status.value === 'pending'"
+              />
+            </UFormField>
 
+            <div class="grid gap-4 sm:grid-cols-2">
               <UFormField
                 name="newPassword"
                 label="New password"
@@ -348,6 +318,21 @@ async function sendResetLink() {
                   </template>
                 </UInput>
               </UFormField>
+
+              <UFormField
+                name="confirmPassword"
+                label="Confirm new password"
+                required
+              >
+                <UInput
+                  v-model="passwordState.confirmPassword"
+                  :type="showPasswords ? 'text' : 'password'"
+                  autocomplete="new-password"
+                  icon="i-lucide-lock-keyhole"
+                  class="w-full"
+                  :disabled="changePassword.status.value === 'pending'"
+                />
+              </UFormField>
             </div>
 
             <div
@@ -369,30 +354,7 @@ async function sendResetLink() {
               </span>
             </div>
 
-            <UFormField
-              name="confirmPassword"
-              label="Confirm new password"
-              required
-            >
-              <UInput
-                v-model="passwordState.confirmPassword"
-                :type="showPasswords ? 'text' : 'password'"
-                autocomplete="new-password"
-                icon="i-lucide-lock-keyhole"
-                class="w-full"
-                :disabled="changePassword.status.value === 'pending'"
-              />
-            </UFormField>
-
-            <div class="flex flex-col-reverse gap-3 border-t border-dashed border-accented pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <UButton
-                label="Email a reset link"
-                color="neutral"
-                variant="ghost"
-                icon="i-lucide-mail"
-                :loading="resetSending"
-                @click="sendResetLink"
-              />
+            <div class="flex justify-end border-t border-dashed border-accented pt-5">
               <UButton
                 type="submit"
                 label="Update password"
