@@ -144,90 +144,108 @@ const supplyItems = computed(() => availableSupplies.value.map(s => ({ label: s.
 </script>
 
 <template>
-  <UContainer class="py-6 space-y-4">
+  <UContainer class="space-y-7 pb-10">
     <UButton
       to="/projects"
       icon="i-lucide-arrow-left"
-      label="Projects"
+      label="Back to projects"
       variant="ghost"
       color="neutral"
       size="sm"
       class="-ml-2"
     />
 
-    <template v-if="projectError">
-      <UCard>
-        <div class="text-center py-8">
-          <UIcon
-            name="i-lucide-alert-circle"
-            class="size-10 mx-auto mb-3 text-error"
-          />
-          <p class="font-medium">
-            Project not found
-          </p>
-          <p class="text-sm text-muted mt-1">
-            The project you're looking for doesn't exist or you don't have access.
-          </p>
-        </div>
-      </UCard>
-    </template>
+    <AppEmptyState
+      v-if="projectError"
+      icon="i-lucide-circle-alert"
+      eyebrow="Loose thread"
+      title="This project could not be found."
+      description="It may have been removed, or you may not have access to this quilting workspace."
+    >
+      <UButton
+        to="/projects"
+        label="Return to projects"
+        icon="i-lucide-arrow-left"
+      />
+    </AppEmptyState>
 
     <template v-else-if="project">
-      <div class="flex items-start justify-between gap-3">
-        <div class="min-w-0">
-          <h1 class="text-2xl font-semibold truncate flex items-center gap-2">
-            {{ project.name }}
-            <UButton
-              :icon="project.favourite ? 'i-lucide-pin' : 'i-lucide-pin-off'"
-              :color="project.favourite ? 'primary' : 'neutral'"
-              variant="ghost"
-              size="xs"
-              @click="toggleFavourite"
-            />
-          </h1>
-          <p
-            v-if="project.patternSource"
-            class="text-muted text-sm"
+      <AppPageHeader
+        eyebrow="Project workroom"
+        :title="project.name"
+        :description="project.patternSource || 'A quilt in progress, ready for notes, materials, and the next stitch.'"
+        icon="i-lucide-folder-kanban"
+        tone="sky"
+        :meta="`${project.supplies.length} linked ${project.supplies.length === 1 ? 'supply' : 'supplies'}`"
+      >
+        <template #actions>
+          <UButton
+            :icon="project.favourite ? 'i-lucide-pin-off' : 'i-lucide-pin'"
+            :label="project.favourite ? 'Unpin project' : 'Pin project'"
+            :color="project.favourite ? 'primary' : 'neutral'"
+            :variant="project.favourite ? 'soft' : 'outline'"
+            @click="toggleFavourite"
+          />
+          <USelect
+            :model-value="project.status"
+            :items="statusItems"
+            :loading="statusSaving"
+            aria-label="Project status"
+            class="w-40"
+            @update:model-value="onStatusChange"
           >
-            {{ project.patternSource }}
+            <template #default>
+              <UBadge
+                :label="formatEnum(project.status)"
+                :color="statusColor[project.status]"
+                variant="subtle"
+              />
+            </template>
+          </USelect>
+        </template>
+      </AppPageHeader>
+
+      <section
+        v-if="project.notes"
+        class="grid gap-4 md:grid-cols-[0.32fr_0.68fr]"
+      >
+        <div class="pt-2">
+          <p class="editorial-label text-primary">
+            Workroom notes
           </p>
+          <h2 class="mt-3 text-3xl text-highlighted">
+            What to remember next.
+          </h2>
         </div>
-        <USelect
-          :model-value="project.status"
-          :items="statusItems"
-          :loading="statusSaving"
-          @update:model-value="onStatusChange"
-        >
-          <template #default>
-            <UBadge
-              :label="formatEnum(project.status)"
-              :color="statusColor[project.status]"
-              variant="subtle"
-            />
-          </template>
-        </USelect>
-      </div>
+        <UCard class="app-card">
+          <!-- Markdown is escaped and protocol-filtered by renderMarkdown. -->
+          <!-- eslint-disable vue/no-v-html -->
+          <div
+            class="text-base leading-7 text-toned [&_p]:my-3 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:ps-5 [&_ol]:list-decimal [&_ol]:ps-5 [&_strong]:font-semibold"
+            v-html="renderMarkdown(project.notes)"
+          />
+          <!-- eslint-enable vue/no-v-html -->
+        </UCard>
+      </section>
 
-      <UCard v-if="project.notes">
-        <p class="text-sm whitespace-pre-wrap">
-          {{ project.notes }}
-        </p>
-      </UCard>
-
-      <UCard>
+      <UCard class="app-card">
         <template #header>
           <div class="flex items-center justify-between">
-            <h2 class="font-semibold flex items-center gap-2">
-              <UIcon
-                name="i-lucide-package"
-                class="text-primary"
-              />
-              Supplies used
-            </h2>
+            <div>
+              <p class="editorial-label text-primary">
+                Material plan
+              </p>
+              <h2 class="mt-2 flex items-center gap-2 text-3xl text-highlighted">
+                <UIcon
+                  name="i-lucide-package"
+                  class="size-5 text-primary"
+                />
+                Supplies used
+              </h2>
+            </div>
             <UButton
               icon="i-lucide-plus"
-              label="Link"
-              size="xs"
+              label="Link supply"
               :disabled="!availableSupplies.length"
               @click="linkModalOpen = true"
             />
@@ -236,25 +254,36 @@ const supplyItems = computed(() => availableSupplies.value.map(s => ({ label: s.
 
         <div
           v-if="!project.supplies.length"
-          class="text-sm text-muted py-4 text-center"
+          class="flex flex-col items-center py-10 text-center"
         >
-          No supplies linked yet.
+          <span class="flex size-12 items-center justify-center rounded-full bg-meadow-100 text-meadow-700">
+            <UIcon
+              name="i-lucide-package-plus"
+              class="size-5"
+            />
+          </span>
+          <h3 class="mt-4 text-2xl text-highlighted">
+            Build the material list.
+          </h3>
+          <p class="mt-2 max-w-md text-sm leading-6 text-muted">
+            Link items from your stash so the project and its quantities stay connected.
+          </p>
         </div>
         <ul
           v-else
-          class="space-y-2"
+          class="divide-y divide-dashed divide-default"
         >
           <li
             v-for="link in project.supplies"
             :key="link.id"
-            class="flex items-center justify-between text-sm"
+            class="flex items-center justify-between gap-3 py-3 text-sm first:pt-0 last:pb-0"
           >
             <span class="flex items-center gap-2 min-w-0">
               <UIcon
                 name="i-lucide-package"
                 class="text-muted shrink-0"
               />
-              <span class="truncate">{{ link.name }}</span>
+              <span class="truncate font-medium text-highlighted">{{ link.name }}</span>
               <UBadge
                 :label="formatEnum(link.type)"
                 variant="subtle"
@@ -271,6 +300,7 @@ const supplyItems = computed(() => availableSupplies.value.map(s => ({ label: s.
             </span>
             <UButton
               icon="i-lucide-x"
+              aria-label="Unlink supply"
               variant="ghost"
               color="error"
               size="xs"
@@ -283,7 +313,7 @@ const supplyItems = computed(() => availableSupplies.value.map(s => ({ label: s.
 
     <UModal
       v-model:open="linkModalOpen"
-      title="Link a Supply"
+      title="Link a supply"
       description="Attach a supply from your stash to this project."
       :ui="{ content: 'sm:max-w-xl' }"
     >

@@ -6,24 +6,28 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_id": "27106bdf-32a2-4f77-86e9-ee23dc313a81"
-    }
+      "database_id": "4d929007-4b2b-4e9c-bf25-2f1392d3fd50",
+      "database_name": "quiltly",
+    },
   ],
   "r2_buckets": [
     {
       "binding": "BLOB",
-      "bucket_name": "quiltly-blob"
-    }
+      "bucket_name": "quiltly-blob",
+    },
   ],
   "send_email": [
-    { "name": "EMAIL", "remote": true }
+    {
+      "name": "EMAIL",
+      "remote": true,
+    },
   ],
   "observability": {
     "logs": {
       "enabled": true,
       "head_sampling_rate": 1,
       "invocation_logs": true,
-      "persist": true
-    }
-  }
+      "persist": true,
+    },
+  },
 }

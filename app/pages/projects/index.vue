@@ -23,14 +23,6 @@ const statusOptions = [
 
 const statusItems = PROJECT_STATUSES.map(s => ({ label: formatEnum(s), value: s }))
 
-const statusColor: Record<ProjectStatus, 'neutral' | 'primary' | 'warning' | 'success' | 'info'> = {
-  planning: 'info',
-  in_progress: 'primary',
-  paused: 'warning',
-  completed: 'success',
-  archived: 'neutral'
-}
-
 const modalOpen = ref(false)
 const editing = ref<Project | null>(null)
 const saving = ref(false)
@@ -125,205 +117,114 @@ async function remove(project: Project) {
 </script>
 
 <template>
-  <UContainer class="py-6 space-y-4">
-    <div class="flex items-center justify-between gap-3">
+  <UContainer class="space-y-8 pb-10">
+    <AppPageHeader
+      eyebrow="Your cutting table"
+      title="Move quilts from first idea to final stitch."
+      description="Keep patterns, notes, materials, and progress together while each piece takes shape."
+      icon="i-lucide-folder-kanban"
+      tone="sky"
+      :meta="`${projects?.length ?? 0} ${projects?.length === 1 ? 'project' : 'projects'} in your workspace`"
+    >
+      <template #actions>
+        <UButton
+          icon="i-lucide-plus"
+          label="Start a project"
+          @click="openCreate"
+        />
+      </template>
+    </AppPageHeader>
+
+    <div class="app-toolbar">
       <div>
-        <h1 class="text-2xl font-semibold">
-          Projects
-        </h1>
-        <p class="text-muted text-sm">
-          {{ projects?.length }} project{{ projects?.length === 1 ? '' : 's' }}
+        <p class="editorial-label text-toned">
+          Project ledger
+        </p>
+        <p class="mt-2 text-sm text-muted">
+          Follow work from planning through completion.
         </p>
       </div>
-      <UButton
-        icon="i-lucide-plus"
-        label="New"
-        @click="openCreate"
+      <USelect
+        v-model="statusFilter"
+        :items="statusOptions"
+        aria-label="Filter projects by status"
+        class="w-full sm:w-52"
       />
     </div>
 
-    <USelect
-      v-model="statusFilter"
-      :items="statusOptions"
-      class="w-full max-w-48"
-    />
-
-    <div
+    <AppEmptyState
       v-if="!projects?.length"
-      class="text-center py-16 text-muted"
+      icon="i-lucide-folder-kanban"
+      eyebrow="A clear cutting table"
+      title="Give the next quilt a place to begin."
+      description="Start with a name and a pattern. You can connect supplies and add notes as the project grows."
     >
-      <UIcon
-        name="i-lucide-folder-kanban"
-        class="size-10 mx-auto mb-3 opacity-50"
-      />
-      <p>No projects yet.</p>
       <UButton
         label="Start a project"
-        variant="link"
+        icon="i-lucide-plus"
         @click="openCreate"
       />
-    </div>
+    </AppEmptyState>
 
-    <ul
+    <div
       v-else
-      class="space-y-6"
+      class="space-y-9"
     >
-      <template v-if="favourites.length">
-        <li>
-          <h2 class="text-sm font-semibold text-muted uppercase tracking-wider flex items-center gap-1.5">
+      <section v-if="favourites.length">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="app-section-heading">
             <UIcon
               name="i-lucide-pin"
-              class="text-primary size-3.5"
+              class="size-3.5 text-primary"
             />
-            Pinned
+            Pinned to the wall
           </h2>
-        </li>
-        <li>
-          <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            <li
-              v-for="project in favourites"
-              :key="project.id"
-            >
-              <UCard
-                :ui="{ body: 'p-4 sm:p-4' }"
-                class="relative h-full transition-shadow hover:shadow-lg"
-              >
-                <NuxtLink
-                  :to="`/projects/${project.id}`"
-                  :aria-label="`Open ${project.name}`"
-                  class="absolute inset-0 z-0 rounded-xl focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary/40"
-                />
-                <div class="relative z-10 flex flex-col gap-3 h-full pointer-events-none">
-                  <div class="flex items-start justify-between gap-2">
-                    <span class="font-medium leading-snug line-clamp-2">{{ project.name }}</span>
-                    <UBadge
-                      :label="formatEnum(project.status)"
-                      :color="statusColor[project.status]"
-                      variant="subtle"
-                      size="sm"
-                      class="shrink-0"
-                    />
-                  </div>
-                  <p
-                    v-if="project.patternSource"
-                    class="text-sm text-muted line-clamp-2 mt-auto"
-                  >
-                    {{ project.patternSource }}
-                  </p>
-                  <div
-                    v-else
-                    class="text-sm text-muted/60 italic mt-auto"
-                  >
-                    No pattern source
-                  </div>
-                  <div class="flex items-center gap-1 shrink-0 pt-3 border-t border-muted/50 pointer-events-auto">
-                    <UButton
-                      icon="i-lucide-pin"
-                      variant="ghost"
-                      color="primary"
-                      size="xs"
-                      @click.stop="toggleFavourite(project)"
-                    />
-                    <UButton
-                      icon="i-lucide-pencil"
-                      variant="ghost"
-                      color="neutral"
-                      size="xs"
-                      @click.stop="openEdit(project)"
-                    />
-                    <UButton
-                      icon="i-lucide-trash-2"
-                      variant="ghost"
-                      color="error"
-                      size="xs"
-                      @click.stop="remove(project)"
-                    />
-                  </div>
-                </div>
-              </UCard>
-            </li>
-          </ul>
-        </li>
-      </template>
+          <span class="font-mono text-[0.65rem] uppercase tracking-[0.1em] text-dimmed">{{ favourites.length }} favorites</span>
+        </div>
+        <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <li
+            v-for="project in favourites"
+            :key="project.id"
+          >
+            <ProjectCard
+              :project="project"
+              @toggle-favourite="toggleFavourite"
+              @edit="openEdit"
+              @remove="remove"
+            />
+          </li>
+        </ul>
+      </section>
 
-      <template v-if="favourites.length && rest.length">
-        <li>
-          <h2 class="text-sm font-semibold text-muted uppercase tracking-wider">
-            All projects
+      <section v-if="rest.length">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="app-section-heading">
+            <UIcon
+              name="i-lucide-layers-3"
+              class="size-3.5 text-primary"
+            />
+            {{ favourites.length ? 'All other projects' : 'On the cutting table' }}
           </h2>
-        </li>
-      </template>
-
-      <li>
-        <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          <span class="font-mono text-[0.65rem] uppercase tracking-[0.1em] text-dimmed">{{ rest.length }} shown</span>
+        </div>
+        <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <li
             v-for="project in rest"
             :key="project.id"
           >
-            <UCard
-              :ui="{ body: 'p-4 sm:p-4' }"
-              class="relative h-full transition-shadow hover:shadow-lg"
-            >
-              <NuxtLink
-                :to="`/projects/${project.id}`"
-                :aria-label="`Open ${project.name}`"
-                class="absolute inset-0 z-0 rounded-xl focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary/40"
-              />
-              <div class="relative z-10 flex flex-col gap-3 h-full pointer-events-none">
-                <div class="flex items-start justify-between gap-2">
-                  <span class="font-medium leading-snug line-clamp-2">{{ project.name }}</span>
-                  <UBadge
-                    :label="formatEnum(project.status)"
-                    :color="statusColor[project.status]"
-                    variant="subtle"
-                    size="sm"
-                    class="shrink-0"
-                  />
-                </div>
-                <p
-                  v-if="project.patternSource"
-                  class="text-sm text-muted line-clamp-2 mt-auto"
-                >
-                  {{ project.patternSource }}
-                </p>
-                <div
-                  v-else
-                  class="text-sm text-muted/60 italic mt-auto"
-                >
-                  No pattern source
-                </div>
-                <div class="flex items-center gap-1 shrink-0 pt-3 border-t border-muted/50 pointer-events-auto">
-                  <UButton
-                    icon="i-lucide-pin-off"
-                    variant="ghost"
-                    color="neutral"
-                    size="xs"
-                    @click.stop="toggleFavourite(project)"
-                  />
-                  <UButton
-                    icon="i-lucide-pencil"
-                    variant="ghost"
-                    color="neutral"
-                    size="xs"
-                    @click.stop="openEdit(project)"
-                  />
-                  <UButton
-                    icon="i-lucide-trash-2"
-                    variant="ghost"
-                    color="error"
-                    size="xs"
-                    @click.stop="remove(project)"
-                  />
-                </div>
-              </div>
-            </UCard>
+            <ProjectCard
+              :project="project"
+              @toggle-favourite="toggleFavourite"
+              @edit="openEdit"
+              @remove="remove"
+            />
           </li>
         </ul>
-      </li>
-    </ul>
+      </section>
+    </div>
     <UModal
       v-model:open="modalOpen"
-      :title="editing ? 'Edit Project' : 'New Project'"
+      :title="editing ? 'Edit project' : 'New project'"
       :description="editing ? 'Update the details of your project.' : 'Start tracking a new quilt project.'"
       :ui="{ content: 'sm:max-w-xl' }"
     >

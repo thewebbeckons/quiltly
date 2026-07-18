@@ -32,7 +32,7 @@ const steps = [
     eyebrow: 'Your inspiration board',
     title: 'Save the ideas worth returning to.',
     description: 'Bookmark patterns, tutorials, and color stories as you find them. Your Dashboard then brings the whole workspace into view.',
-    icon: 'i-lucide-bookmark-heart',
+    icon: 'i-lucide-bookmark',
     color: 'petal'
   }
 ] as const

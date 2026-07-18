@@ -1,5 +1,8 @@
 <script setup lang="ts">
+const { user } = useUserSession()
 const { data: stats } = await useFetch('/api/stats')
+
+const firstName = computed(() => user.value?.name?.trim().split(/\s+/)[0] || 'there')
 
 const statCards = computed(() => [
   { label: 'Active projects', value: stats.value?.activeProjects ?? 0, icon: 'i-lucide-circle-play', color: 'text-primary' },
@@ -15,55 +18,79 @@ const createItems = [
 </script>
 
 <template>
-  <UContainer class="py-6 space-y-6">
-    <div class="flex items-center justify-between gap-3">
-      <div>
-        <h1 class="text-2xl font-semibold">
-          Dashboard
-        </h1>
-        <p class="text-muted text-sm">
-          An overview of your quilting workspace
-        </p>
-      </div>
-      <UDropdownMenu
-        :items="createItems"
-        :content="{ align: 'end' }"
-      >
-        <UButton
-          icon="i-lucide-plus"
-          label="Create"
-          trailing-icon="i-lucide-chevron-down"
-        />
-      </UDropdownMenu>
-    </div>
-
-    <div class="grid grid-cols-3 gap-3">
-      <UCard
-        v-for="card in statCards"
-        :key="card.label"
-        class="text-center"
-      >
-        <div class="flex flex-col items-center gap-1">
-          <UIcon
-            :name="card.icon"
-            :class="['size-6', card.color]"
+  <UContainer class="space-y-8 pb-10">
+    <AppPageHeader
+      eyebrow="Your quilting workspace"
+      :title="`Hi ${firstName}. Keep the whole quilt in view.`"
+      description="See what is in motion, what needs attention, and where inspiration is waiting."
+      icon="i-lucide-layout-dashboard"
+      tone="calico"
+      meta="Workspace overview"
+    >
+      <template #actions>
+        <UDropdownMenu
+          :items="createItems"
+          :content="{ align: 'start' }"
+        >
+          <UButton
+            icon="i-lucide-plus"
+            label="Create something"
+            trailing-icon="i-lucide-chevron-down"
           />
-          <span class="text-2xl font-bold">{{ card.value }}</span>
-          <span class="text-xs text-muted">{{ card.label }}</span>
-        </div>
-      </UCard>
-    </div>
+        </UDropdownMenu>
+      </template>
+    </AppPageHeader>
 
-    <div class="grid md:grid-cols-2 gap-6">
-      <UCard>
+    <section>
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="app-section-heading">
+          <UIcon
+            name="i-lucide-ruler"
+            class="size-3.5 text-primary"
+          />
+          On the cutting table
+        </h2>
+        <span class="font-mono text-[0.65rem] uppercase tracking-[0.1em] text-dimmed">Right now</span>
+      </div>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <UCard
+          v-for="(card, index) in statCards"
+          :key="card.label"
+          :ui="{ body: 'p-5 sm:p-6' }"
+          class="app-card"
+        >
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <span class="font-display text-5xl font-medium leading-none tracking-[-0.055em] text-highlighted">{{ card.value }}</span>
+              <p class="mt-3 font-mono text-[0.68rem] uppercase tracking-[0.08em] text-muted">
+                {{ card.label }}
+              </p>
+            </div>
+            <div class="flex size-11 items-center justify-center rounded-full bg-muted/75">
+              <UIcon
+                :name="card.icon"
+                :class="['size-5', card.color]"
+              />
+            </div>
+          </div>
+          <div
+            class="mt-5 h-1"
+            :class="index === 0 ? 'bg-calico-300' : index === 1 ? 'bg-sky-300' : 'bg-meadow-300'"
+          />
+        </UCard>
+      </div>
+    </section>
+
+    <div class="grid gap-4 md:grid-cols-2">
+      <UCard class="app-card">
         <template #header>
           <div class="flex items-center justify-between">
-            <h2 class="font-semibold flex items-center gap-2">
+            <h2 class="flex items-center gap-2 text-2xl text-highlighted">
               <UIcon
                 name="i-lucide-triangle-alert"
-                class="text-warning"
+                class="size-5 text-warning"
               />
-              Low stock
+              Low-stock notes
             </h2>
             <UButton
               to="/supplies"
@@ -77,9 +104,12 @@ const createItems = [
 
         <div
           v-if="!stats?.lowStock?.length"
-          class="text-sm text-muted py-4 text-center"
+          class="flex items-center gap-3 py-3 text-sm text-muted"
         >
-          Everything is well stocked.
+          <span class="flex size-9 items-center justify-center rounded-full bg-meadow-100 text-meadow-700">
+            <UIcon name="i-lucide-check" />
+          </span>
+          Everything is well stocked. Your stash is ready.
         </div>
         <ul
           v-else
@@ -88,7 +118,7 @@ const createItems = [
           <li
             v-for="item in stats.lowStock"
             :key="item.id"
-            class="flex items-center justify-between text-sm"
+            class="flex items-center justify-between gap-3 border-b border-dashed border-default py-2 text-sm last:border-0"
           >
             <span class="flex items-center gap-2">
               <UIcon
@@ -107,13 +137,13 @@ const createItems = [
         </ul>
       </UCard>
 
-      <UCard>
+      <UCard class="app-card">
         <template #header>
           <div class="flex items-center justify-between">
-            <h2 class="font-semibold flex items-center gap-2">
+            <h2 class="flex items-center gap-2 text-2xl text-highlighted">
               <UIcon
                 name="i-lucide-bookmark"
-                class="text-primary"
+                class="size-5 text-primary"
               />
               Recent inspiration
             </h2>
@@ -129,9 +159,12 @@ const createItems = [
 
         <div
           v-if="!stats?.recentBookmarks?.length"
-          class="text-sm text-muted py-4 text-center"
+          class="flex items-center gap-3 py-3 text-sm text-muted"
         >
-          No bookmarks yet.
+          <span class="flex size-9 items-center justify-center rounded-full bg-petal-100 text-petal-700">
+            <UIcon name="i-lucide-bookmark-plus" />
+          </span>
+          Save a pattern or color story to start your inspiration board.
         </div>
         <ul
           v-else
@@ -156,19 +189,19 @@ const createItems = [
       </UCard>
     </div>
 
-    <UCard>
+    <UCard class="app-card">
       <template #header>
-        <h2 class="font-semibold flex items-center gap-2">
+        <h2 class="flex items-center gap-2 text-2xl text-highlighted">
           <UIcon
             name="i-lucide-package"
-            class="text-primary"
+            class="size-5 text-primary"
           />
           Supplies by type
         </h2>
       </template>
       <div
         v-if="!stats?.suppliesByType?.length"
-        class="text-sm text-muted py-4 text-center"
+        class="text-sm text-muted py-3"
       >
         Add supplies to see a breakdown.
       </div>

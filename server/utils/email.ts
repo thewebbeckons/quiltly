@@ -7,11 +7,46 @@ interface SendEmailOptions {
   text: string
 }
 
+interface RenderedEmail {
+  subject: string
+  html: string
+  text: string
+}
+
 type EmailBinding = { send: (m: unknown) => Promise<unknown> }
 
 function getEmailBinding(source?: H3Event | Request): EmailBinding | undefined {
   if (!source || source instanceof Request) return undefined
   return (source.context as { cloudflare?: { env?: { EMAIL?: EmailBinding } } }).cloudflare?.env?.EMAIL
+}
+
+function getRenderedContent(result: string | { html: string, subject: string }): string {
+  return typeof result === 'string' ? result : result.html
+}
+
+function getRenderedSubject(result: string | { html: string, subject: string }): string | undefined {
+  return typeof result === 'string' ? undefined : result.subject
+}
+
+export async function renderTransactionalEmail(
+  template: 'VerifyEmail' | 'ResetPassword',
+  props: { actionUrl: string }
+): Promise<RenderedEmail> {
+  const [htmlResult, textResult] = await Promise.all([
+    renderEmailComponent(template, props),
+    renderEmailComponent(template, props, { plainText: true })
+  ])
+  const subject = getRenderedSubject(htmlResult)
+
+  if (!subject) {
+    throw new Error(`[email] template "${template}" is missing a subject`)
+  }
+
+  return {
+    subject,
+    html: getRenderedContent(htmlResult),
+    text: getRenderedContent(textResult).trim()
+  }
 }
 
 export async function sendEmail(opts: SendEmailOptions, source?: H3Event | Request): Promise<void> {

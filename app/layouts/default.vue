@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const { user, signOut } = useUserSession()
 const route = useRoute()
-const onboardingOpen = ref(false)
+const { open: onboardingOpen, show: showOnboardingTour } = useOnboardingTour()
 
 const nav = [
   { label: 'Dashboard', to: '/dashboard', icon: 'i-lucide-layout-dashboard' },
@@ -22,7 +22,8 @@ const userMenu = computed(() => [
   { type: 'label' as const, label: user.value?.name || 'Account' },
   { type: 'label' as const, label: user.value?.email || '' },
   { type: 'separator' as const },
-  { label: 'View welcome tour', icon: 'i-lucide-sparkles', onSelect: () => onboardingOpen.value = true },
+  { label: 'Profile & settings', icon: 'i-lucide-user-round-cog', to: '/settings' },
+  { label: 'View welcome tour', icon: 'i-lucide-sparkles', onSelect: showOnboardingTour },
   { type: 'separator' as const },
   { label: 'Sign out', icon: 'i-lucide-log-out', color: 'error' as const, onSelect: onSignOut }
 ])
@@ -32,7 +33,7 @@ const userMenu = computed(() => [
   <div class="min-h-screen bg-default text-default paper-noise">
     <UHeader
       :toggle="false"
-      class="mx-3 mt-3 rounded-[3px]"
+      class="mx-3 mt-3 rounded-[3px] ring-1 ring-default/55"
     >
       <template #left>
         <NuxtLink
@@ -40,7 +41,10 @@ const userMenu = computed(() => [
           class="flex items-center gap-3"
         >
           <LandingPatch size="sm" />
-          <span class="font-display text-xl font-medium tracking-[-0.04em]">Quiltly</span>
+          <span>
+            <span class="block font-display text-xl font-medium leading-none tracking-[-0.04em]">Quiltly</span>
+            <span class="mt-1 hidden font-mono text-[0.55rem] uppercase tracking-[0.12em] text-muted lg:block">The quilting workroom</span>
+          </span>
         </NuxtLink>
       </template>
 
@@ -61,7 +65,9 @@ const userMenu = computed(() => [
             icon="i-lucide-user"
             trailing-icon="i-lucide-chevron-down"
             aria-label="Open account menu"
-          />
+          >
+            <span class="hidden max-w-32 truncate text-xs sm:block">{{ user?.name || 'Account' }}</span>
+          </UButton>
         </UDropdownMenu>
       </template>
     </UHeader>
@@ -72,14 +78,14 @@ const userMenu = computed(() => [
       </div>
     </UMain>
 
-    <nav class="md:hidden fixed bottom-3 inset-x-3 z-50 bg-elevated/92 backdrop-blur-xl rounded-[3px] pb-[env(safe-area-inset-bottom)] shadow-[0_12px_40px_rgb(68_60_56_/_0.12)]">
-      <div class="grid grid-cols-4">
+    <nav class="fixed inset-x-3 bottom-3 z-50 rounded-[3px] bg-elevated/92 pb-[env(safe-area-inset-bottom)] shadow-[0_12px_40px_rgb(68_60_56_/_0.12)] ring-1 ring-default/70 backdrop-blur-xl md:hidden">
+      <div class="grid grid-cols-4 gap-1 p-1">
         <NuxtLink
           v-for="item in nav"
           :key="item.to"
           :to="item.to"
-          class="flex flex-col items-center gap-1 py-2 text-xs font-medium"
-          :class="isActive(item.to) ? 'text-primary' : 'text-muted'"
+          class="relative flex flex-col items-center gap-1 rounded-[2px] py-2 text-[0.65rem] font-medium transition-colors"
+          :class="isActive(item.to) ? 'bg-primary/10 text-primary' : 'text-muted hover:bg-muted/65 hover:text-highlighted'"
         >
           <UIcon
             :name="item.icon"

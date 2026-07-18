@@ -469,7 +469,7 @@
           <pre><code>pnpm install
 pnpm run lint
 pnpm run typecheck
-pnpm run build</code></pre>
+pnpm run build:cloudflare</code></pre>
         </article>
 
         <article class="step">
@@ -488,7 +488,8 @@ pnpm exec wrangler whoami</code></pre>
             <h3>Add production secrets</h3>
           </div>
           <p>Keep secrets in Cloudflare, not in git. Use the dashboard or Wrangler secret commands.</p>
-          <pre><code>pnpm exec wrangler secret put BETTER_AUTH_SECRET
+          <pre><code>pnpm exec wrangler secret put NUXT_BETTER_AUTH_SECRET
+pnpm exec wrangler secret put NUXT_PUBLIC_SITE_URL
 pnpm exec wrangler secret put NUXT_CF_ACCOUNT_ID
 pnpm exec wrangler secret put NUXT_CF_EMAIL_API_TOKEN</code></pre>
         </article>
@@ -499,8 +500,7 @@ pnpm exec wrangler secret put NUXT_CF_EMAIL_API_TOKEN</code></pre>
             <h3>Publish the Worker</h3>
           </div>
           <p>The app now sets <code>nitro.preset: 'cloudflare-module'</code>. Nitro generates the deployable Wrangler config in <code>.output</code>.</p>
-          <pre><code>pnpm run build
-pnpm exec wrangler --cwd .output deploy</code></pre>
+          <pre><code>pnpm run deploy:cloudflare</code></pre>
         </article>
       </div>
     </section>
@@ -568,7 +568,7 @@ pnpm exec wrangler --cwd .output deploy</code></pre>
       <div class="note">
         <h3>Project-specific notes</h3>
         <p>
-          The current <code>wrangler.jsonc</code> commits the Worker name, <code>nodejs_compat</code>, Email binding, and observability. Keep NuxtHub storage configuration in <code>nuxt.config.ts</code>, and keep <code>BETTER_AUTH_SECRET</code>, <code>NUXT_CF_ACCOUNT_ID</code>, and <code>NUXT_CF_EMAIL_API_TOKEN</code> configured as Cloudflare secrets.
+          The current <code>wrangler.jsonc</code> commits the Worker name, <code>nodejs_compat</code>, Email binding, and observability. Keep NuxtHub storage configuration in <code>nuxt.config.ts</code>, and keep <code>NUXT_BETTER_AUTH_SECRET</code>, <code>NUXT_PUBLIC_SITE_URL</code>, <code>NUXT_CF_ACCOUNT_ID</code>, and <code>NUXT_CF_EMAIL_API_TOKEN</code> configured as Cloudflare secrets. Build with <code>pnpm run build:cloudflare</code> so the production URL is not inherited from the local <code>.env</code> file.
         </p>
       </div>
     </section>

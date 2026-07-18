@@ -12,7 +12,8 @@ export default defineNuxtConfig({
     '@nuxt/image',
     '@nuxt/scripts',
     '@nuxthub/core',
-    '@onmax/nuxt-better-auth'
+    '@onmax/nuxt-better-auth',
+    'nuxt-email-renderer'
   ],
 
   devtools: {
@@ -32,7 +33,9 @@ export default defineNuxtConfig({
 
   routeRules: {
     '/login': { auth: 'guest' },
+    '/reset-password': { auth: false },
     '/dashboard': { auth: 'user' },
+    '/settings': { auth: 'user' },
     '/supplies': { auth: 'user' },
     '/supplies/**': { auth: 'user' },
     '/projects': { auth: 'user' },

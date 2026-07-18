@@ -12,6 +12,14 @@ const url = ref('')
 const urlInput = ref()
 const urlSchema = z.object({ url: z.string().url('Enter a valid URL') })
 
+function hostname(value: string) {
+  try {
+    return new URL(value).hostname.replace(/^www\./, '')
+  } catch {
+    return value
+  }
+}
+
 async function addBookmark() {
   const parsed = urlSchema.safeParse({ url: url.value })
   if (!parsed.success) {
@@ -59,117 +67,157 @@ async function remove(bookmark: Bookmark) {
 </script>
 
 <template>
-  <UContainer class="py-6 space-y-4">
-    <div>
-      <h1 class="text-2xl font-semibold">
-        Inspiration
-      </h1>
-      <p class="text-muted text-sm">
-        {{ bookmarks?.length }} bookmark{{ bookmarks?.length === 1 ? '' : 's' }}
-      </p>
-    </div>
+  <UContainer class="space-y-8 pb-10">
+    <AppPageHeader
+      eyebrow="Your inspiration board"
+      title="Keep the ideas worth returning to."
+      description="Collect patterns, tutorials, color stories, and thoughtful details before the spark slips away."
+      icon="i-lucide-bookmark"
+      tone="petal"
+      :meta="`${bookmarks?.length ?? 0} saved ${bookmarks?.length === 1 ? 'idea' : 'ideas'}`"
+    />
 
-    <div class="flex gap-2">
-      <UInput
-        ref="urlInput"
-        v-model="url"
-        placeholder="https://example.com/quilt-idea"
-        icon="i-lucide-link"
-        class="flex-1"
-        @keydown.enter="addBookmark"
-      />
-      <UButton
-        icon="i-lucide-plus"
-        label="Save"
-        :loading="adding"
-        @click="addBookmark"
-      />
-    </div>
+    <section class="grid gap-4 bg-elevated/65 p-5 shadow-[0_18px_50px_rgb(68_60_56_/_0.045)] sm:grid-cols-[0.45fr_1fr] sm:items-end sm:p-6">
+      <div>
+        <p class="editorial-label text-primary">
+          Pin something new
+        </p>
+        <h2 class="mt-3 text-3xl text-highlighted">
+          Save the spark.
+        </h2>
+        <p class="mt-2 text-sm leading-6 text-muted">
+          Paste a link and Quiltly will gather the useful details.
+        </p>
+      </div>
+      <div class="flex flex-col gap-2 sm:flex-row">
+        <UInput
+          ref="urlInput"
+          v-model="url"
+          placeholder="https://example.com/quilt-idea"
+          icon="i-lucide-link"
+          aria-label="Bookmark URL"
+          class="flex-1"
+          size="lg"
+          @keydown.enter="addBookmark"
+        />
+        <UButton
+          icon="i-lucide-plus"
+          label="Save idea"
+          size="lg"
+          :loading="adding"
+          @click="addBookmark"
+        />
+      </div>
+    </section>
 
-    <div
+    <AppEmptyState
       v-if="!bookmarks?.length"
-      class="text-center py-16 text-muted"
+      icon="i-lucide-bookmark"
+      eyebrow="An open pinboard"
+      title="Your next idea belongs here."
+      description="Save a pattern, tutorial, or color palette and it will be waiting when you are ready to make."
     >
-      <UIcon
-        name="i-lucide-bookmark"
-        class="size-10 mx-auto mb-3 opacity-50"
+      <UButton
+        label="Focus the link field"
+        variant="soft"
+        icon="i-lucide-arrow-up"
+        @click="urlInput?.inputRef?.focus()"
       />
-      <p>No bookmarks yet.</p>
-    </div>
+    </AppEmptyState>
 
-    <ul
-      v-else
-      class="grid sm:grid-cols-2 gap-3"
-    >
-      <li
-        v-for="bookmark in bookmarks"
-        :key="bookmark.id"
-      >
-        <UCard :ui="{ body: 'p-3 sm:p-4' }">
-          <div class="flex items-start gap-3">
-            <img
-              v-if="bookmark.ogImage"
-              :src="bookmark.ogImage"
-              :alt="bookmark.title || ''"
-              class="size-12 rounded object-cover shrink-0 bg-elevated"
-            >
-            <div
-              v-else
-              class="size-12 rounded bg-elevated flex items-center justify-center shrink-0"
-            >
-              <UIcon
-                name="i-lucide-image"
-                class="text-muted"
-              />
-            </div>
-            <div class="min-w-0 flex-1">
-              <UButton
-                :to="bookmark.url"
-                target="_blank"
-                variant="link"
-                color="neutral"
-                class="p-0 -ml-1 align-baseline font-medium text-left truncate block"
-                :label="bookmark.title || bookmark.url"
-                trailing-icon="i-lucide-external-link"
-              />
-              <p
-                v-if="bookmark.description"
-                class="text-sm text-muted line-clamp-2"
+    <section v-else>
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="app-section-heading">
+          <UIcon
+            name="i-lucide-sparkles"
+            class="size-3.5 text-primary"
+          />
+          Saved inspiration
+        </h2>
+        <span class="font-mono text-[0.65rem] uppercase tracking-[0.1em] text-dimmed">Newest first</span>
+      </div>
+      <ul class="grid gap-4 sm:grid-cols-2">
+        <li
+          v-for="bookmark in bookmarks"
+          :key="bookmark.id"
+        >
+          <UCard
+            :ui="{ body: 'p-0 sm:p-0' }"
+            class="app-card h-full"
+          >
+            <div class="grid h-full grid-cols-[6rem_1fr] sm:grid-cols-[8rem_1fr]">
+              <img
+                v-if="bookmark.ogImage"
+                :src="bookmark.ogImage"
+                :alt="bookmark.title || ''"
+                class="h-full min-h-40 w-full object-cover bg-muted"
               >
-                {{ bookmark.description }}
-              </p>
               <div
-                v-if="bookmark.tags?.length"
-                class="flex flex-wrap gap-1 mt-1"
+                v-else
+                class="bookmark-placeholder flex min-h-40 items-center justify-center bg-petal-100 text-petal-700"
               >
-                <UBadge
-                  v-for="tag in bookmark.tags"
-                  :key="tag"
-                  :label="tag"
-                  variant="subtle"
-                  size="sm"
+                <UIcon
+                  name="i-lucide-image"
+                  class="size-7"
                 />
               </div>
+              <div class="flex min-w-0 flex-col p-4 sm:p-5">
+                <div class="flex items-start justify-between gap-2">
+                  <p class="font-mono text-[0.65rem] uppercase tracking-[0.08em] text-muted">
+                    {{ hostname(bookmark.url) }}
+                  </p>
+                  <UButton
+                    icon="i-lucide-heart"
+                    :aria-label="bookmark.favorite ? 'Remove from favorites' : 'Add to favorites'"
+                    :color="bookmark.favorite ? 'error' : 'neutral'"
+                    variant="ghost"
+                    size="xs"
+                    class="-mr-2 -mt-2"
+                    @click="toggleFavorite(bookmark)"
+                  />
+                </div>
+                <UButton
+                  :to="bookmark.url"
+                  target="_blank"
+                  variant="link"
+                  color="neutral"
+                  class="mt-2 block justify-start p-0 text-left font-display text-xl font-medium leading-6 text-highlighted sm:text-2xl"
+                  :label="bookmark.title || bookmark.url"
+                  trailing-icon="i-lucide-external-link"
+                />
+                <p
+                  v-if="bookmark.description"
+                  class="mt-2 line-clamp-2 text-sm leading-5 text-muted"
+                >
+                  {{ bookmark.description }}
+                </p>
+                <div
+                  v-if="bookmark.tags?.length"
+                  class="mt-auto flex flex-wrap gap-1 pt-4"
+                >
+                  <UBadge
+                    v-for="tag in bookmark.tags"
+                    :key="tag"
+                    :label="tag"
+                    variant="subtle"
+                    size="sm"
+                  />
+                </div>
+                <div class="mt-auto flex justify-end pt-3">
+                  <UButton
+                    icon="i-lucide-trash-2"
+                    aria-label="Delete bookmark"
+                    variant="ghost"
+                    color="error"
+                    size="xs"
+                    @click="remove(bookmark)"
+                  />
+                </div>
+              </div>
             </div>
-            <div class="flex flex-col gap-1 shrink-0">
-              <UButton
-                :icon="bookmark.favorite ? 'i-lucide-heart' : 'i-lucide-heart'"
-                :color="bookmark.favorite ? 'error' : 'neutral'"
-                variant="ghost"
-                size="xs"
-                @click="toggleFavorite(bookmark)"
-              />
-              <UButton
-                icon="i-lucide-trash-2"
-                variant="ghost"
-                color="error"
-                size="xs"
-                @click="remove(bookmark)"
-              />
-            </div>
-          </div>
-        </UCard>
-      </li>
-    </ul>
+          </UCard>
+        </li>
+      </ul>
+    </section>
   </UContainer>
 </template>

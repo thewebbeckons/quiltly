@@ -1,64 +1,144 @@
-# Nuxt Starter Template
+# Quiltly
 
-[![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
+Quiltly is a Nuxt 4 workspace for tracking quilting supplies, projects, and inspiration. It deploys as a Cloudflare Worker with D1 for relational data, R2 for uploads, Better Auth for accounts, and Cloudflare Email Service for verification email.
 
-Use this template to get started with [Nuxt UI](https://ui.nuxt.com) quickly.
-
-- [Live demo](https://starter-template.nuxt.dev/)
-- [Documentation](https://ui.nuxt.com/docs/getting-started/installation/nuxt)
-
-<a href="https://starter-template.nuxt.dev/" target="_blank">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://ui.nuxt.com/assets/templates/nuxt/starter-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="https://ui.nuxt.com/assets/templates/nuxt/starter-light.png">
-    <img alt="Nuxt Starter Template" src="https://ui.nuxt.com/assets/templates/nuxt/starter-light.png" width="830" height="466">
-  </picture>
-</a>
-
-> The starter template for Vue is on https://github.com/nuxt-ui-templates/starter-vue.
-
-## Quick Start
-
-```bash [Terminal]
-npm create nuxt@latest -- -t ui
-```
-
-## Deploy your own
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-name=starter&repository-url=https%3A%2F%2Fgithub.com%2Fnuxt-ui-templates%2Fstarter&demo-image=https%3A%2F%2Fui.nuxt.com%2Fassets%2Ftemplates%2Fnuxt%2Fstarter-dark.png&demo-url=https%3A%2F%2Fstarter-template.nuxt.dev%2F&demo-title=Nuxt%20Starter%20Template&demo-description=A%20minimal%20template%20to%20get%20started%20with%20Nuxt%20UI.)
-
-## Setup
-
-Make sure to install the dependencies:
+## Local development
 
 ```bash
 pnpm install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
 pnpm dev
 ```
 
-## Production
-
-Build the application for production:
+Before opening a pull request or deploying:
 
 ```bash
+pnpm lint
+pnpm typecheck
 pnpm build
 ```
 
-Locally preview production build:
+## Cloudflare deployment
+
+The repository is already configured for a Worker named `quiltly`. The checked-in `wrangler.jsonc` expects:
+
+- D1 binding `DB` with database ID `4d929007-4b2b-4e9c-bf25-2f1392d3fd50`
+- R2 binding `BLOB` with bucket `quiltly-blob`
+- Email binding `EMAIL`
+- Worker logs and invocation logging
+
+### 1. Authenticate Wrangler
 
 ```bash
-pnpm preview
+pnpm exec wrangler login
+pnpm exec wrangler whoami
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+Confirm that Wrangler shows the Cloudflare account that owns the configured D1 database, R2 bucket, and sending domain.
 
-## Renovate integration
+### 2. Confirm the storage resources
 
-Install [Renovate GitHub app](https://github.com/apps/renovate/installations/select_target) on your repository and you are good to go.
+```bash
+pnpm exec wrangler d1 list
+pnpm exec wrangler r2 bucket list
+```
+
+If the configured resources do not exist in that account, create replacements and copy the new D1 ID and R2 bucket name into `wrangler.jsonc`:
+
+```bash
+pnpm exec wrangler d1 create quiltly
+pnpm exec wrangler r2 bucket create quiltly-blob
+```
+
+R2 can remain private; Quiltly serves uploaded files through its authenticated server route.
+
+### 3. Configure production email
+
+In the Cloudflare dashboard, open **Compute → Email Service** and configure sending for the domain used by `noreply@quiltly.app`. Verify the sending domain/address and make sure the account can send verification emails to real recipients.
+
+Create an API token that can send email for the account. Keep the account ID and token for the secrets step. The Worker uses the `EMAIL` binding first and the REST credentials as a fallback.
+
+If the sender address is not `noreply@quiltly.app`, set `NUXT_EMAIL_FROM` in the production secrets file in the next step.
+
+### 4. Prepare production secrets
+
+Generate a high-entropy auth secret of at least 32 characters:
+
+```bash
+openssl rand -base64 32
+```
+
+Create an ignored `.env.production` file locally:
+
+```dotenv
+NUXT_BETTER_AUTH_SECRET=replace-with-generated-secret
+NUXT_PUBLIC_SITE_URL=https://quiltly.ca
+NUXT_CF_ACCOUNT_ID=replace-with-cloudflare-account-id
+NUXT_CF_EMAIL_API_TOKEN=replace-with-email-api-token
+# NUXT_EMAIL_FROM=noreply@your-production-domain.example
+```
+
+Do not commit this file. `.env.production` is already covered by `.gitignore`.
+
+### 5. Build the Cloudflare bundle
+
+```bash
+pnpm install --frozen-lockfile
+pnpm lint
+pnpm typecheck
+pnpm build:cloudflare
+```
+
+The Cloudflare build explicitly loads `.env.production`; a plain `pnpm build` loads the local `.env`, where `NUXT_PUBLIC_SITE_URL` is normally a localhost URL. The build generates the deployable Worker configuration at `.output/server/wrangler.json`.
+
+### 6. Apply the production database migrations
+
+```bash
+pnpm exec wrangler d1 migrations apply DB --remote --config .output/server/wrangler.json
+```
+
+Review the migration list before confirming. This creates the auth, preference, project, supply, bookmark, and project-supply tables.
+
+### 7. Deploy the Worker and secrets
+
+For the first production deployment:
+
+```bash
+pnpm exec wrangler deploy --config .output/server/wrangler.json --keep-vars --secrets-file .env.production
+```
+
+For later deployments, the configured script rebuilds with `.env.production`, applies migrations, publishes the Worker, and synchronizes the production secrets:
+
+```bash
+pnpm deploy:cloudflare
+```
+
+Wrangler prints the `workers.dev` URL when deployment succeeds.
+
+### 8. Attach the production domain
+
+In **Workers & Pages → quiltly → Settings → Domains & Routes**, add the custom domain. If the final domain changes, update `NUXT_PUBLIC_SITE_URL` in `.env.production` and redeploy:
+
+```bash
+pnpm deploy:cloudflare
+```
+
+### 9. Run the production smoke test
+
+Open the deployed app and verify, in order:
+
+1. The landing and sign-in pages load over HTTPS.
+2. A new user can register and receives a verification email.
+3. The verification link returns to the production domain and opens onboarding.
+4. A supply can be created and an upload can be retrieved.
+5. A project can be created, linked to a supply, and marked complete.
+6. A bookmark can be saved and its preview appears.
+7. The Dashboard totals update.
+8. Desktop and mobile navigation work without horizontal overflow.
+
+Watch production logs while running the test:
+
+```bash
+pnpm exec wrangler tail quiltly
+```
+
+If a request fails, check the Worker logs first, then confirm the D1, R2, Email, and secret bindings in **Workers & Pages → quiltly → Settings**.
